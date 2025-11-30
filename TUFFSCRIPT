@@ -1,0 +1,91 @@
+local fold = workspace:FindFirstChild("Themes")
+if not fold then
+    warn("[DEBUG] folder not found")
+    return
+end
+
+local tempUrl = "https://cdn.discordapp.com/attachments/1424471255599415463/1444442634151268453/tuffLMS.mp3?ex=692cb988&is=692b6808&hm=c37f077ac18d84a334647892a3a104371cc5f4e6faa25da96ccc12cfe57724a0&"
+--use your discord audio or keep this
+local id
+
+print("[DEBUG] Checking asset functions...")
+
+if getcustomasset then
+    print("[DEBUG] getcustomasset FOUND, using it...")
+    local ok, result = pcall(function()
+        return getcustomasset(tempUrl)
+    end)
+
+    if ok then
+        id = result
+        print("[DEBUG] getcustomasset SUCCESS:", id)
+    else
+        print("[DEBUG] getcustomasset ERROR:", result)
+    end
+
+elseif newasset then
+    print("[DEBUG] newasset FOUND, using it...")
+    local ok, result = pcall(function()
+        return newasset(tempUrl)
+    end)
+
+    if ok then
+        id = result
+        print("[DEBUG] newasset SUCCESS:", id)
+    else
+        print("[DEBUG] newasset ERROR:", result)
+    end
+else
+    print("[DEBUG] No executor functions found, using Roblox ID fallback")
+    id = "rbxassetid://139940081796746"
+end
+
+local function protectSound(sound)
+    print("[DEBUG] Setting SoundId on:", sound.Name)
+    print("[DEBUG] SoundId =", id)
+
+    sound.SoundId = id
+
+    sound.Changed:Connect(function(property)
+        if property == "SoundId" and sound.SoundId ~= id then
+            print("[DEBUG] SoundId changed externally! Resetting...")
+            sound.SoundId = id
+        end
+    end)
+
+    print("[DEBUG] Waiting for sound...")
+    local ok, err = pcall(function()
+        sound.Loaded:Wait()
+    end)
+
+    if ok then
+        print("[DEBUG] Sound LOADED successfully:", sound.Name)
+    else
+        print("[DEBUG] ERROR while loading sound:", err)
+    end
+end
+
+local function soundFix()
+    print("[DEBUG] loop started...")
+
+    while true do
+        local sound = fold:FindFirstChild("LastSurvivor")
+
+        if sound then
+            print("[DEBUG] Found LastSurvivor.")
+            protectSound(sound)
+            
+            print("[DEBUG] Waiting for AncestryChanged (round end)...")
+            sound.AncestryChanged:Wait()
+            
+            print("[DEBUG] round ended")
+        else
+            print("[DEBUG] LastSurvivor not found, waiting for ChildAdded...")
+            fold.ChildAdded:Wait()
+        end
+
+        task.wait()
+    end
+end
+
+task.spawn(soundFix)
